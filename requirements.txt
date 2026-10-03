@@ -1,0 +1,9 @@
+fastapi
+uvicorn
+sqlalchemy 
+jinja2
+python-multipart 
+python-dotenv>=1.0
+pytest >=8.0
+httpx
+groq
