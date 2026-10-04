@@ -32,6 +32,52 @@ Only a human action can move an item to "decided" or "final".
 ## Tech stack
 Python, FastAPI, SQLAlchemy with SQLite, Jinja2 server-rendered pages, Groq for the AI model, pytest.
 
+## Architecture
+A request flows through three layers:
+
+    Browser or API client
+      -> routes (app/routes: validate input, return responses)
+      -> services (app/services: checks, AI review, workflow, decisions, appeals, policy, audit)
+      -> database (SQLAlchemy models on SQLite)
+
+Item lifecycle, enforced by one table in `services/workflow.py`:
+
+    submitted -> ai_reviewed -> pending_moderator -> decided -> appealed -> second_review -> final
+
+- Plain-code checks run at submission. The AI review is a separate step that validates the AI's output before saving it.
+- Only moderator and second-reviewer routes can move an item to `decided` or `final`.
+- Pages (`/ui/...`) call the same route functions as the JSON API (`/docs`), so rules live in one place.
+- Each action and its audit entry are saved in a single commit.
+
+## Scope
+**Completed**
+- Posts, comments, user reports, and moderation history
+- Deterministic checks combined with AI review, with cited clauses, confirmed vs uncertain evidence, severity, confidence, and a human-needed flag
+- Moderation queue with approve, reject, and modify
+- Appeals with an independent second review, showing the original decision, appeal evidence, and final outcome
+- Versioned policy, with re-evaluation of items waiting for a moderator
+- Append-only audit trail
+
+**Excluded (outside the stated scope)**
+- Image or video moderation
+- Real social-network integration
+- Automatic account bans
+- Unrestricted user-generated content
+
+**Left out by choice**
+- Authentication and roles
+- Pagination
+
+## Deployment
+Deployed on Render's free web service from this GitHub repo.
+
+- Build command: `pip install -r requirements.txt`
+- Start command: `uvicorn app.main:app --host 0.0.0.0 --port $PORT`
+- Environment variables: `AI_API_KEY`, `AI_MODEL` (set in Render, never committed)
+- Health check: `/health`
+- The free plan sleeps when idle, so the first load can take up to a minute.
+- It has no persistent disk, so the SQLite data resets on redeploy. The seed restores policy v1 and the demo items.
+
 ## Project structure
 ```
 app/
