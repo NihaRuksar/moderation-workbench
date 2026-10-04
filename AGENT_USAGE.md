@@ -24,7 +24,7 @@
 - **Models I rejected:** the safeguard and prompt-guard models (built for classification, not general review), and an unfamiliar model whose JSON behavior I could not trust.
 - **Review caught problems in my code:** a hardcoded database URL in `database.py`, a missing `get_db()`, and a missing `import os` in `config.py`.
 - **Deployment platform changed** because the Railway trial ended, so I moved to Render.
-- [Add this only if true: I pasted my API key into chat by mistake, so I revoked it and created a new one.]
+- I pasted my API key into chat by mistake, so I revoked it and created a new one.
 
 ## How I verified the output
 - 20 automated tests (`pytest -q`) with a fake AI, so no key or network is needed.
