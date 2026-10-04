@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+{% block title %}Policy{% endblock %}
+{% block content %}
+<h1>Policy versions</h1>
+<p class="sub">Every review and decision records the version it used. Old versions are never edited.</p>
+
+<div class="card table-wrap">
+  <table>
+    <tr><th>Version</th><th>Status</th><th>Rules</th><th>Notes</th><th>Created</th><th></th></tr>
+    {% for v in versions %}
+    <tr>
+      <td>v{{ v.version_number }}</td>
+      <td>{% if v.is_active %}<span class="badge dark">Active</span>{% else %}<span class="badge gray">Old</span>{% endif %}</td>
+      <td>{{ v.rule_count }}</td>
+      <td>{{ v.notes }}</td>
+      <td>{{ v.created_at|dt }}</td>
+      <td><a href="/ui/policy?v={{ v.version_number }}">View rules</a></td>
+    </tr>
+    {% endfor %}
+  </table>
+</div>
+
+<div class="card table-wrap">
+  <h2>Rules in v{{ selected.version_number }}{% if selected.is_active %} (active){% endif %}</h2>
+  <table>
+    <tr><th>Clause</th><th>Title</th><th>Rule</th><th>Default severity</th></tr>
+    {% for rule in selected.rules %}
+    <tr>
+      <td><b>{{ rule.clause_id }}</b></td>
+      <td>{{ rule.title }}</td>
+      <td>{{ rule.text }}</td>
+      <td><span class="badge {{ badge(rule.severity_default) }}">{{ rule.severity_default }}</span></td>
+    </tr>
+    {% endfor %}
+  </table>
+</div>
+
+<div class="card" style="max-width:700px">
+  <h2>Create a new version</h2>
+  <div class="alert warn">The new version becomes active and every item waiting for a moderator is re-reviewed under it. This can take a minute because the AI reviews them one at a time.</div>
+  <form method="post" action="/ui/policy/new">
+    <label>Your name</label>
+    <input name="created_by" required maxlength="100">
+    <label>What changed (notes)</label>
+    <textarea name="notes" required></textarea>
+    <p class="muted" style="margin-top:14px"><b>Add or replace one rule (optional).</b> Using an existing clause ID replaces that rule.</p>
+    <label>Clause ID</label>
+    <input name="clause_id" placeholder="for example 5.1">
+    <label>Title</label>
+    <input name="title">
+    <label>Rule text</label>
+    <textarea name="text"></textarea>
+    <label>Default severity</label>
+    <select name="severity_default">
+      <option value="low">Low</option>
+      <option value="medium" selected>Medium</option>
+      <option value="high">High</option>
+    </select>
+    <label>Remove clauses (optional, separated by commas)</label>
+    <input name="remove_clauses" placeholder="for example 3.1, 3.2">
+    <button>Create version and re-evaluate</button>
+  </form>
+</div>
+
+<div class="card">
+  <h2>Finish an interrupted re-evaluation</h2>
+  <p class="muted">Re-reviews any waiting item still on an older version. Safe to run twice.</p>
+  <form method="post" action="/ui/policy/reevaluate"><button>Run re-evaluation</button></form>
+</div>
+{% endblock %}

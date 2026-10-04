@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block title %}Moderation queue{% endblock %}
+{% block content %}
+<h1>Moderation queue</h1>
+<p class="sub">Items waiting for a human decision, highest severity first. The AI only proposes. A moderator decides.</p>
+
+<div class="stats">
+  <div class="stat"><b>{{ rows|length }}</b><span>Waiting for a moderator</span></div>
+  <div class="stat"><b>{{ rows|selectattr('needs_human')|list|length }}</b><span>Need human judgment</span></div>
+  <div class="stat"><b>{{ rows|selectattr('severity', 'equalto', 'high')|list|length }}</b><span>High severity</span></div>
+  <div class="stat"><b>{{ pending_appeals }}</b><span>Appeals waiting</span></div>
+</div>
+
+<div class="card table-wrap">
+  {% if rows %}
+  <table>
+    <tr><th>ID</th><th>Type</th><th>Author</th><th>Content</th><th>AI proposes</th><th>Severity</th><th>Confidence</th><th>Human</th><th></th></tr>
+    {% for r in rows %}
+    <tr>
+      <td>#{{ r.id }}</td>
+      <td>{{ r.content_type }}</td>
+      <td>{{ r.author }}</td>
+      <td>{{ r.preview }}{% if r.preview|length >= 100 %}&hellip;{% endif %}</td>
+      <td><span class="badge {{ badge(r.proposed_action) }}">{{ r.proposed_action|pretty }}</span></td>
+      <td><span class="badge {{ badge(r.severity) }}">{{ r.severity }}</span></td>
+      <td>{{ (r.confidence * 100)|round|int }}%</td>
+      <td>{% if r.needs_human %}<span class="badge amber">Needed</span>{% else %}<span class="muted">-</span>{% endif %}</td>
+      <td><a class="btn light" href="/ui/content/{{ r.id }}">Review</a></td>
+    </tr>
+    {% endfor %}
+  </table>
+  {% else %}
+  <p class="muted">Nothing is waiting. Open <a href="/ui/content">All content</a>, pick an item, and run its AI review.</p>
+  {% endif %}
+</div>
+{% endblock %}

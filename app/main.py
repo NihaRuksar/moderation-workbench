@@ -1,9 +1,10 @@
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
+from fastapi.responses import RedirectResponse
 
 from app.seed import seed
-from app.routes import appeals, content, policy, queue
+from app.routes import appeals, content, pages, policy, queue
 
 
 @asynccontextmanager
@@ -19,6 +20,10 @@ app.include_router(content.router)
 app.include_router(queue.router)
 app.include_router(appeals.router)
 app.include_router(policy.router)
+app.include_router(pages.router)
 @app.get("/health")
 def health():
     return {"status": "ok"}
+@app.get("/", include_in_schema=False)
+def home():
+    return RedirectResponse("/ui/queue")

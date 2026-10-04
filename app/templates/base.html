@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{% block title %}Moderation Workbench{% endblock %}</title>
+<style>
+:root{--bg:#f3f4f6;--card:#fff;--ink:#1f2937;--muted:#6b7280;--line:#e5e7eb;--side:#1f2937;--side-ink:#d1d5db;--red:#b91c1c;--red-bg:#fee2e2;--amber:#b45309;--amber-bg:#fef3c7;--gray-bg:#e5e7eb;--dark-bg:#374151}
+*{box-sizing:border-box}
+body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--ink);display:flex;min-height:100vh;font-size:14px;line-height:1.5}
+.sidebar{width:220px;background:var(--side);color:var(--side-ink);padding:20px 0;flex-shrink:0}
+.brand{color:#fff;font-weight:700;padding:0 20px 16px;font-size:15px;border-bottom:1px solid #374151;margin-bottom:10px}
+.sidebar a{display:block;padding:10px 20px;color:var(--side-ink);text-decoration:none}
+.sidebar a:hover{background:#374151;color:#fff}
+.sidebar a.active{background:#374151;color:#fff;border-left:3px solid #9ca3af;padding-left:17px}
+main{flex:1;padding:28px;max-width:1100px;min-width:0}
+h1{margin:0 0 4px;font-size:22px}
+h2{font-size:15px;margin:0 0 12px}
+.sub{color:var(--muted);margin:0 0 20px}
+.muted{color:var(--muted)}
+.mono{font-family:ui-monospace,Consolas,monospace;font-size:12px}
+a{color:#1f2937}
+.card{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:18px;margin-bottom:16px}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:16px}
+.stat{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:14px}
+.stat b{display:block;font-size:24px}
+.stat span{color:var(--muted);font-size:12px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.table-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse}
+th{text-align:left;font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
+th,td{padding:10px 8px;border-bottom:1px solid var(--line);vertical-align:top}
+tr:last-child td{border-bottom:none}
+.badge{display:inline-block;padding:2px 9px;border-radius:999px;font-size:12px;font-weight:600;white-space:nowrap}
+.red{background:var(--red-bg);color:var(--red)}
+.amber{background:var(--amber-bg);color:var(--amber)}
+.gray{background:var(--gray-bg);color:#374151}
+.dark{background:var(--dark-bg);color:#fff}
+.alert{padding:12px 16px;border-radius:8px;margin-bottom:16px;border:1px solid}
+.alert.ok{background:#f9fafb;border-color:var(--line)}
+.alert.error{background:var(--red-bg);border-color:#fca5a5;color:var(--red)}
+.alert.warn{background:var(--amber-bg);border-color:#fcd34d;color:var(--amber)}
+label{display:block;font-weight:600;margin:12px 0 4px}
+input,select,textarea{width:100%;padding:8px 10px;border:1px solid #d1d5db;border-radius:6px;font:inherit;background:#fff}
+textarea{min-height:80px}
+button,.btn{display:inline-block;margin-top:14px;padding:9px 16px;background:#374151;color:#fff;border:0;border-radius:6px;font:inherit;font-weight:600;cursor:pointer;text-decoration:none}
+button:hover,.btn:hover{background:#111827}
+.btn.light{background:#e5e7eb;color:#1f2937;margin-top:0}
+.quote{background:#f9fafb;border-left:3px solid #9ca3af;padding:10px 12px;margin:6px 0;white-space:pre-wrap;word-break:break-word}
+@media(max-width:800px){body{flex-direction:column}.sidebar{width:100%}.grid2{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<nav class="sidebar">
+  <div class="brand">Moderation Workbench</div>
+  <a href="/ui/queue" class="{{ 'active' if active == 'queue' }}">Moderation queue</a>
+  <a href="/ui/content" class="{{ 'active' if active == 'content' }}">All content</a>
+  <a href="/ui/submit" class="{{ 'active' if active == 'submit' }}">Submit content</a>
+  <a href="/ui/appeals" class="{{ 'active' if active == 'appeals' }}">Appeals</a>
+  <a href="/ui/policy" class="{{ 'active' if active == 'policy' }}">Policy</a>
+  <a href="/ui/audit" class="{{ 'active' if active == 'audit' }}">Audit trail</a>
+</nav>
+<main>
+  {% if msg %}<div class="alert {{ kind }}">{{ msg }}</div>{% endif %}
+  {% block content %}{% endblock %}
+</main>
+</body>
+</html>

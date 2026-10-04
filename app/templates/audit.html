@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block title %}Audit trail{% endblock %}
+{% block content %}
+<h1>Audit trail</h1>
+<p class="sub">
+  {% if content_id %}Everything that happened to item #{{ content_id }}, oldest first.
+  {% else %}The latest actions across the whole system, newest first.{% endif %}
+  Entries are only ever added, never edited.
+</p>
+
+<div class="card">
+  <form method="get" action="/ui/audit" style="display:flex;gap:10px;align-items:flex-end">
+    <div style="flex:1;max-width:260px">
+      <label style="margin-top:0">Filter by item ID</label>
+      <input name="content_id" type="number" min="1" value="{{ content_id or '' }}">
+    </div>
+    <button style="margin:0">Filter</button>
+    <a class="btn light" href="/ui/audit">Show all</a>
+  </form>
+</div>
+
+<div class="card table-wrap">
+  {% if entries %}
+  <table>
+    <tr><th>When</th><th>Who</th><th>Action</th><th>About</th><th>Details</th></tr>
+    {% for e in entries %}
+    <tr>
+      <td class="mono">{{ e.created_at|dt }}</td>
+      <td>{{ e.actor }}</td>
+      <td>{{ e.action|pretty }}</td>
+      <td>{{ e.entity_type|pretty }}{% if e.entity_id %} #{{ e.entity_id }}{% endif %}</td>
+      <td>{{ e.details or '' }}</td>
+    </tr>
+    {% endfor %}
+  </table>
+  {% else %}
+  <p class="muted">No entries found.</p>
+  {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,164 @@
+{% extends "base.html" %}
+{% block title %}Item #{{ content.id }}{% endblock %}
+{% block content %}
+<p><a href="/ui/queue">&larr; Back to queue</a></p>
+<h1>Item #{{ content.id }} <span class="badge {{ badge(content.status) }}">{{ content.status|pretty }}</span></h1>
+<p class="sub">
+  {{ content.content_type|capitalize }} by <b>{{ content.author }}</b> &middot; {{ content.created_at|dt }}
+  &middot; <a href="/ui/audit?content_id={{ content.id }}">Audit trail for this item</a>
+</p>
+
+<div class="grid2">
+  <div class="card">
+    <h2>Content</h2>
+    <div class="quote">{{ content.body }}</div>
+  </div>
+  <div class="card">
+    <h2>Parent content (context)</h2>
+    {% if parent %}
+      <p class="muted">By {{ parent.author }} &middot; <a href="/ui/content/{{ parent.id }}">item #{{ parent.id }}</a></p>
+      <div class="quote">{{ parent.body }}</div>
+    {% else %}
+      <p class="muted">This item does not reply to anything.</p>
+    {% endif %}
+  </div>
+</div>
+
+<div class="card table-wrap">
+  <h2>Automatic checks (plain code, no AI)</h2>
+  {% if flags %}
+  <table>
+    <tr><th>Check</th><th>Clause</th><th>Detail</th></tr>
+    {% for f in flags %}
+    <tr><td>{{ f.check|pretty }}</td><td>{{ f.clause_id or '-' }}</td><td>{{ f.detail }}</td></tr>
+    {% endfor %}
+  </table>
+  <p class="muted">Flags are signals, not verdicts.</p>
+  {% else %}
+  <p class="muted">No flags.</p>
+  {% endif %}
+</div>
+
+{% if can_review %}
+<div class="card">
+  <h2>Next step: AI review</h2>
+  <p class="muted">The AI will propose an action. Nothing is removed until a moderator decides.</p>
+  <form method="post" action="/ui/content/{{ content.id }}/review"><button>Run AI review</button></form>
+</div>
+{% endif %}
+
+{% if review and content.status != 'submitted' %}
+<div class="card">
+  <h2>AI review (a proposal only)</h2>
+  <p>
+    <span class="badge {{ badge(review.proposed_action) }}">Proposes: {{ review.proposed_action|pretty }}</span>
+    <span class="badge {{ badge(review.severity) }}">Severity: {{ review.severity }}</span>
+    <span class="badge gray">Confidence: {{ (review.confidence * 100)|round|int }}%</span>
+    {% if review.needs_human %}<span class="badge amber">Human judgment needed</span>{% endif %}
+    <span class="badge gray">Policy v{{ numbers[review.policy_version_id] }}</span>
+    {% if review.ai_used == false %}<span class="badge red">AI unavailable (fallback)</span>{% endif %}
+  </p>
+  {% if review.reasoning %}<p>{{ review.reasoning }}</p>{% endif %}
+
+  {% if review.findings %}
+  <div class="table-wrap">
+    <table>
+      <tr><th>Clause</th><th>Evidence</th><th>Type</th><th>Why</th></tr>
+      {% for f in review.findings %}
+      <tr>
+        <td><b>{{ f.clause_id }}</b><br><span class="muted">{{ titles.get(f.clause_id, '') }}</span></td>
+        <td>{% if f.evidence_quote %}<div class="quote">{{ f.evidence_quote }}</div>{% else %}<span class="muted">-</span>{% endif %}</td>
+        <td><span class="badge {{ badge(f.evidence_type) }}">{{ f.evidence_type }}</span></td>
+        <td>{{ f.explanation }}</td>
+      </tr>
+      {% endfor %}
+    </table>
+  </div>
+  {% else %}
+  <p class="muted">No policy violation was cited.</p>
+  {% endif %}
+
+  {% if review.validation_notes %}
+  <h2 style="margin-top:14px">Validation notes</h2>
+  <ul>{% for n in review.validation_notes %}<li>{{ n }}</li>{% endfor %}</ul>
+  {% endif %}
+</div>
+{% endif %}
+
+{% if decision %}
+<div class="card">
+  <h2>Moderator decision</h2>
+  <p>
+    <b>{{ decision.moderator }}</b> chose <span class="badge gray">{{ decision.action }}</span>
+    &rarr; final action <span class="badge {{ badge(decision.final_action) }}">{{ decision.final_action|pretty }}</span>
+    &middot; policy v{{ numbers[decision.policy_version_id] }}
+  </p>
+  {% if decision.note %}<div class="quote">{{ decision.note }}</div>{% endif %}
+  {% if appeal %}
+  <p>Appeal: <a href="/ui/appeals/{{ appeal.id }}">appeal #{{ appeal.id }}</a> ({{ appeal.status|pretty }})</p>
+  {% endif %}
+</div>
+{% endif %}
+
+{% if can_decide %}
+<div class="card" style="max-width:700px">
+  <h2>Moderator decision</h2>
+  {% if review and review.proposed_action == 'escalate' %}
+  <div class="alert warn">The AI escalated this item, so "Approve" is not allowed. Use "Modify" and choose the outcome yourself.</div>
+  {% endif %}
+  <form method="post" action="/ui/content/{{ content.id }}/decision">
+    <label>Your name (moderator)</label>
+    <input name="moderator" required maxlength="100">
+    <label>Action</label>
+    <select name="action">
+      <option value="approve">Approve the AI proposal</option>
+      <option value="reject">Reject the AI proposal (no action)</option>
+      <option value="modify">Modify (choose my own outcome)</option>
+    </select>
+    <label>Final action (only for Modify)</label>
+    <select name="final_action">
+      <option value="">-</option>
+      <option value="no_action">No action</option>
+      <option value="warn">Warn</option>
+      <option value="remove_content">Remove content</option>
+    </select>
+    <label>Note (required for Reject and Modify)</label>
+    <textarea name="note"></textarea>
+    <button>Save decision</button>
+  </form>
+</div>
+{% endif %}
+
+{% if can_appeal %}
+<div class="card" style="max-width:700px">
+  <h2>Appeal this decision (for the author)</h2>
+  <form method="post" action="/ui/content/{{ content.id }}/appeal">
+    <label>Author name</label>
+    <input name="author" required maxlength="100">
+    <label>Reason</label>
+    <textarea name="reason" required></textarea>
+    <label>Evidence (optional)</label>
+    <textarea name="evidence"></textarea>
+    <button>Submit appeal</button>
+  </form>
+</div>
+{% endif %}
+
+{% if history|length > 1 %}
+<div class="card table-wrap">
+  <h2>Review history (re-evaluated after a policy change)</h2>
+  <table>
+    <tr><th>Review</th><th>Policy</th><th>AI proposed</th><th>Severity</th><th>When</th></tr>
+    {% for h in history %}
+    <tr>
+      <td>#{{ h.id }}</td>
+      <td>v{{ h.version }}</td>
+      <td><span class="badge {{ badge(h.action) }}">{{ h.action|pretty }}</span></td>
+      <td><span class="badge {{ badge(h.severity) }}">{{ h.severity }}</span></td>
+      <td>{{ h.created_at|dt }}</td>
+    </tr>
+    {% endfor %}
+  </table>
+</div>
+{% endif %}
+{% endblock %}

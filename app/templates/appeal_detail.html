@@ -1,0 +1,94 @@
+{% extends "base.html" %}
+{% block title %}Appeal #{{ data.appeal.appeal_id }}{% endblock %}
+{% block content %}
+{% set appeal = data.appeal %}
+{% set d = data.original_decision %}
+{% set r = data.original_review %}
+<p><a href="/ui/appeals">&larr; Back to appeals</a></p>
+<h1>Appeal #{{ appeal.appeal_id }} <span class="badge {{ badge(appeal.status) }}">{{ appeal.status|pretty }}</span></h1>
+<p class="sub">
+  About <a href="/ui/content/{{ data.content.id }}">item #{{ data.content.id }}</a>
+  &middot; Action now in force:
+  <span class="badge {{ badge(data.current_final_action) }}">{{ data.current_final_action|pretty }}</span>
+  &middot; <a href="/ui/audit?content_id={{ data.content.id }}">Audit trail</a>
+</p>
+
+<div class="card">
+  <h2>1. The original content</h2>
+  <p class="muted">By {{ data.content.author }}</p>
+  <div class="quote">{{ data.content.body }}</div>
+  {% if data.parent %}
+  <p class="muted">Context, the parent by {{ data.parent.author }}:</p>
+  <div class="quote">{{ data.parent.body }}</div>
+  {% endif %}
+</div>
+
+<div class="card">
+  <h2>2. The original decision</h2>
+  <p>
+    The AI proposed <span class="badge {{ badge(r.proposed_action) }}">{{ r.proposed_action|pretty }}</span>
+    (severity {{ r.severity }}, confidence {{ (r.confidence * 100)|round|int }}%).
+  </p>
+  {% if r.findings %}
+  <ul>
+    {% for f in r.findings %}
+    <li>Clause <b>{{ f.clause_id }}</b> ({{ f.evidence_type }}): {{ f.explanation }}</li>
+    {% endfor %}
+  </ul>
+  {% endif %}
+  <p>
+    <b>{{ d.moderator }}</b> chose <span class="badge gray">{{ d.action }}</span>
+    &rarr; <span class="badge {{ badge(d.final_action) }}">{{ d.final_action|pretty }}</span>
+    &middot; policy v{{ numbers[d.policy_version_id] }}
+  </p>
+  {% if d.note %}<div class="quote">{{ d.note }}</div>{% endif %}
+</div>
+
+<div class="card">
+  <h2>3. The author's appeal</h2>
+  <p class="muted">Submitted {{ appeal.submitted_at|dt }}</p>
+  <p><b>Reason</b></p>
+  <div class="quote">{{ appeal.reason }}</div>
+  {% if appeal.evidence %}
+  <p><b>Evidence</b></p>
+  <div class="quote">{{ appeal.evidence }}</div>
+  {% endif %}
+</div>
+
+{% if data.outcome %}
+<div class="card">
+  <h2>4. Final outcome</h2>
+  <p>
+    <b>{{ data.outcome.second_reviewer }}</b> decided
+    <span class="badge {{ badge(data.outcome.outcome) }}">{{ data.outcome.outcome }}</span>
+    &rarr; final action <span class="badge {{ badge(data.outcome.final_action) }}">{{ data.outcome.final_action|pretty }}</span>
+  </p>
+  <div class="quote">{{ data.outcome.note }}</div>
+</div>
+{% else %}
+<div class="card" style="max-width:700px">
+  <h2>4. Second review</h2>
+  <p class="muted">The second reviewer must be a different person from the original moderator and from the author.</p>
+  <form method="post" action="/ui/appeals/{{ appeal.appeal_id }}/resolve">
+    <label>Your name (second reviewer)</label>
+    <input name="second_reviewer" required maxlength="100">
+    <label>Outcome</label>
+    <select name="outcome">
+      <option value="upheld">Upheld (the decision stands)</option>
+      <option value="overturned">Overturned (no action)</option>
+      <option value="modified">Modified (choose a new action)</option>
+    </select>
+    <label>Final action (only for Modified)</label>
+    <select name="final_action">
+      <option value="">-</option>
+      <option value="no_action">No action</option>
+      <option value="warn">Warn</option>
+      <option value="remove_content">Remove content</option>
+    </select>
+    <label>Note (required)</label>
+    <textarea name="note" required></textarea>
+    <button>Resolve appeal</button>
+  </form>
+</div>
+{% endif %}
+{% endblock %}

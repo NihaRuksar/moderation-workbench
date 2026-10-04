@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block title %}Submit content{% endblock %}
+{% block content %}
+<h1>Submit content</h1>
+<p class="sub">Plain-code checks run straight away. The AI review is a separate step.</p>
+<div class="card" style="max-width:640px">
+  <form method="post" action="/ui/submit">
+    <label>Type</label>
+    <select name="content_type">
+      <option value="post">Post</option>
+      <option value="comment">Comment</option>
+      <option value="report">User report</option>
+    </select>
+    <label>Author</label>
+    <input name="author" required maxlength="100">
+    <label>Parent item ID (optional, for comments and reports)</label>
+    <input name="parent_id" placeholder="for example 1">
+    <label>Text</label>
+    <textarea name="body" required maxlength="5000"></textarea>
+    <button>Submit</button>
+  </form>
+</div>
+{% endblock %}

@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block body %}
+<h1>Content Moderation and Appeals Workbench</h1>
+<div class="box">
+  The AI only <b>proposes</b> an action. Only a human moderator can decide, and only a
+  human can resolve an appeal. Active policy: <b>version {{ policy.version_number }}</b>.
+</div>
+
+<h2>Content by status ({{ total }} total)</h2>
+<div class="grid">
+  {% for s in statuses %}
+    <a class="box stat" href="/ui/content?status={{ s }}"><b>{{ counts.get(s, 0) }}</b>{{ s }}</a>
+  {% endfor %}
+  <a class="box stat" href="/ui/appeals"><b>{{ pending_appeals }}</b>appeals waiting</a>
+</div>
+
+<h2>Start here</h2>
+<ul>
+  <li><a href="/ui/submit">Submit new content</a></li>
+  <li><a href="/ui/queue">Open the moderation queue</a></li>
+  <li><a href="/ui/audit">See the audit trail</a></li>
+</ul>
+<p class="muted">Names are typed into forms. There is no login in this version.</p>
+{% endblock %}

@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block title %}All content{% endblock %}
+{% block content %}
+<h1>All content</h1>
+<p class="sub">Every post, comment, and report, with where it is in the workflow.</p>
+<a class="btn" href="/ui/submit" style="margin:0 0 16px">Submit new content</a>
+
+<div class="card table-wrap">
+  <table>
+    <tr><th>ID</th><th>Type</th><th>Author</th><th>Status</th><th>Content</th></tr>
+    {% for i in items %}
+    <tr>
+      <td><a href="/ui/content/{{ i.id }}">#{{ i.id }}</a></td>
+      <td>{{ i.content_type }}</td>
+      <td>{{ i.author }}</td>
+      <td><span class="badge {{ badge(i.status) }}">{{ i.status|pretty }}</span></td>
+      <td>{{ i.body[:90] }}{% if i.body|length > 90 %}&hellip;{% endif %}</td>
+    </tr>
+    {% endfor %}
+  </table>
+</div>
+{% endblock %}

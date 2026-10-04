@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% block title %}Appeals{% endblock %}
+{% block content %}
+<h1>Appeals</h1>
+<p class="sub">Authors can appeal a warning or removal. A different person makes the final call. The AI is never involved in resolving appeals.</p>
+
+<div class="card table-wrap">
+  <h2>Waiting for a second reviewer ({{ pending|length }})</h2>
+  {% if pending %}
+  <table>
+    <tr><th>Appeal</th><th>Item</th><th>Author</th><th>Original moderator</th><th>Original action</th><th>Reason</th><th></th></tr>
+    {% for a in pending %}
+    <tr>
+      <td>#{{ a.appeal_id }}</td>
+      <td><a href="/ui/content/{{ a.content_id }}">#{{ a.content_id }}</a></td>
+      <td>{{ a.author }}</td>
+      <td>{{ a.original_moderator }}</td>
+      <td><span class="badge {{ badge(a.original_final_action) }}">{{ a.original_final_action|pretty }}</span></td>
+      <td>{{ a.reason_preview }}</td>
+      <td><a class="btn light" href="/ui/appeals/{{ a.appeal_id }}">Open</a></td>
+    </tr>
+    {% endfor %}
+  </table>
+  {% else %}
+  <p class="muted">No appeals are waiting.</p>
+  {% endif %}
+</div>
+
+<div class="card table-wrap">
+  <h2>Resolved ({{ resolved|length }})</h2>
+  {% if resolved %}
+  <table>
+    <tr><th>Appeal</th><th>Item</th><th>Author</th><th>Second reviewer</th><th>Outcome</th><th>Final action</th><th></th></tr>
+    {% for a in resolved %}
+    <tr>
+      <td>#{{ a.appeal_id }}</td>
+      <td><a href="/ui/content/{{ a.content_id }}">#{{ a.content_id }}</a></td>
+      <td>{{ a.author }}</td>
+      <td>{{ a.second_reviewer }}</td>
+      <td><span class="badge {{ badge(a.outcome) }}">{{ a.outcome }}</span></td>
+      <td><span class="badge {{ badge(a.final_action) }}">{{ a.final_action|pretty }}</span></td>
+      <td><a href="/ui/appeals/{{ a.appeal_id }}">View</a></td>
+    </tr>
+    {% endfor %}
+  </table>
+  {% else %}
+  <p class="muted">Nothing resolved yet.</p>
+  {% endif %}
+</div>
+{% endblock %}
