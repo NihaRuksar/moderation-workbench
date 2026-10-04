@@ -7,9 +7,11 @@ from sqlalchemy.orm import Session
 
 from app import models
 from app.database import get_db
+from app.services.ai_review import run_ai_review
 from app.services.audit import log_action
 from app.services.checks import run_checks
 from app.services.policy import get_active_policy
+from app.services.workflow import change_status
 
 router = APIRouter(prefix="/content", tags=["content"])
 
@@ -65,6 +67,78 @@ def submit_content(data: ContentCreate, db: Session = Depends(get_db)):
 
     # 7. Response
     return {"id": content.id, "status": content.status, "flags": flags}
+
+
+@router.post("/{content_id}/review")
+def review_content(content_id: int, db: Session = Depends(get_db)):
+    # 1. The content must exist
+    content = db.get(models.Content, content_id)
+    if content is None:
+        raise HTTPException(status_code=404, detail="Content not found")
+
+    # 2. It must not have been reviewed already
+    if content.status != "submitted":
+        raise HTTPException(
+            status_code=409,
+            detail=f"Content is '{content.status}', so it cannot be AI-reviewed again",
+        )
+
+    # 3. Find the latest review. Seeded demo items have none, so create one.
+    policy = get_active_policy(db)
+    review = (
+        db.query(models.Review)
+        .filter(models.Review.content_id == content.id)
+        .order_by(models.Review.id.desc())
+        .first()
+    )
+    if review is None:
+        flags = run_checks(db, content)
+        review = models.Review(
+            content_id=content.id,
+            policy_version_id=policy.id,
+            deterministic_flags=json.dumps(flags),
+        )
+        db.add(review)
+    else:
+        flags = json.loads(review.deterministic_flags)
+
+    # 4. Ask the AI (this never crashes: it falls back if the AI fails)
+    result = run_ai_review(db, content, policy, flags)
+
+    # 5. Save the result on the same review row
+    review.policy_version_id = policy.id
+    review.findings = json.dumps({
+        "findings": result["findings"],
+        "reasoning": result["reasoning"],
+        "validation_notes": result["validation_notes"],
+        "ai_used": result["ai_used"],
+    })
+    review.proposed_action = result["proposed_action"]
+    review.severity = result["severity"]
+    review.confidence = result["confidence"]
+    review.needs_human = result["needs_human"]
+
+    # 6. Move the status forward, one allowed step at a time
+    change_status(db, content, "ai_reviewed", "ai")
+    change_status(db, content, "pending_moderator", "system")
+
+    # 7. Audit log
+    action_name = "ai_review_completed" if result["ai_used"] else "ai_review_fallback"
+    log_action(
+        db, "ai", action_name, "content", content.id,
+        f"action={result['proposed_action']}, severity={result['severity']}, "
+        f"confidence={result['confidence']}",
+    )
+
+    # 8. One commit, then return everything
+    db.commit()
+    return {
+        "id": content.id,
+        "status": content.status,
+        "review_id": review.id,
+        "policy_version_id": policy.id,
+        **result,
+    }
 
 
 @router.get("")

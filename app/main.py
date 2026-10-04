@@ -3,7 +3,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 
 from app.seed import seed
-from app.routes import content
+from app.routes import appeals, content, queue
 
 
 @asynccontextmanager
@@ -16,7 +16,8 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(title="Content Moderation and Appeals Workbench", lifespan=lifespan)
 app.include_router(content.router)
-
+app.include_router(queue.router)
+app.include_router(appeals.router)
 @app.get("/health")
 def health():
     return {"status": "ok"}

@@ -108,6 +108,7 @@ class Appeal(Base): #The author's appeal, the second reviewer, and the outcome
     status: Mapped[str] = mapped_column(String(30), default="pending_second_review")
     second_reviewer: Mapped[str | None] = mapped_column(String(100), nullable=True)
     outcome: Mapped[str | None] = mapped_column(String(20), nullable=True)  # upheld / overturned / modified
+    final_action: Mapped[str | None] = mapped_column(String(50), nullable=True)  # the action in force after the appeal
     outcome_note: Mapped[str | None] = mapped_column(Text, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=now)
 
