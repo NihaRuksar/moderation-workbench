@@ -251,7 +251,8 @@ def run_ai_review(db, content, policy, flags):
     Never raises because of the AI. If anything fails, it returns the fallback.
     Does not change the database."""
     rules = {r.clause_id: r for r in policy.rules}
-
+    # Ignore code flags for clauses that are not in this policy version
+    flags = [f for f in flags if not f.get("clause_id") or f["clause_id"] in rules]
     if not AI_API_KEY:
         return _fallback(flags, rules, "AI unavailable: no API key is set.")
 

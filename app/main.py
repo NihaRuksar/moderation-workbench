@@ -3,7 +3,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 
 from app.seed import seed
-from app.routes import appeals, content, queue
+from app.routes import appeals, content, policy, queue
 
 
 @asynccontextmanager
@@ -18,6 +18,7 @@ app = FastAPI(title="Content Moderation and Appeals Workbench", lifespan=lifespa
 app.include_router(content.router)
 app.include_router(queue.router)
 app.include_router(appeals.router)
+app.include_router(policy.router)
 @app.get("/health")
 def health():
     return {"status": "ok"}
