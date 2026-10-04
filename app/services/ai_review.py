@@ -1,5 +1,7 @@
 import json
-
+import logging
+import time
+from app.logging_config import log_event
 from groq import Groq
 
 from app import models
@@ -254,6 +256,7 @@ def run_ai_review(db, content, policy, flags):
     # Ignore code flags for clauses that are not in this policy version
     flags = [f for f in flags if not f.get("clause_id") or f["clause_id"] in rules]
     if not AI_API_KEY:
+        log_event("ai", "ai_review_fallback", logging.WARNING, content_id=content.id, reason="no_api_key")
         return _fallback(flags, rules, "AI unavailable: no API key is set.")
 
     past_actions = (
@@ -266,16 +269,36 @@ def run_ai_review(db, content, policy, flags):
 
     raw = None
     last_error = "AI returned invalid JSON."
-    for _ in range(MAX_ATTEMPTS):
+    for attempt in range(1, MAX_ATTEMPTS + 1):
+        started = time.monotonic()
         try:
             raw = _parse_json(_call_ai(messages))
-            if raw is not None:
-                break
-            last_error = "AI returned invalid JSON."
+            outcome = "ok" if raw is not None else "invalid_json"
         except Exception as error:  # network, timeout, bad key, and so on
-            last_error = f"AI call failed: {type(error).__name__}"
+            outcome = type(error).__name__
+        log_event(
+            "ai", "ai_call",
+            logging.INFO if outcome == "ok" else logging.WARNING,
+            content_id=content.id, model=AI_MODEL, attempt=attempt,
+            outcome=outcome, latency_ms=round((time.monotonic() - started) * 1000),
+        )
+        if raw is not None:
+            break
+        last_error = (
+            "AI returned invalid JSON." if outcome == "invalid_json"
+            else f"AI call failed: {outcome}"
+        )
 
     if raw is None:
+        log_event("ai", "ai_review_fallback", logging.WARNING, content_id=content.id, reason=last_error)
         return _fallback(flags, rules, f"AI unavailable: {last_error}")
 
-    return _validate(raw, content, rules, flags)
+    result = _validate(raw, content, rules, flags)
+    log_event(
+        "ai", "ai_review_validated",
+        content_id=content.id, proposed_action=result["proposed_action"],
+        severity=result["severity"], confidence=result["confidence"],
+        needs_human=result["needs_human"], findings=len(result["findings"]),
+        corrections=len(result["validation_notes"]),
+    )
+    return result

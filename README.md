@@ -27,6 +27,7 @@ Only a human action can move an item to "decided" or "final".
 - Code, not the AI, decides when a human is required: low confidence, uncertain findings, removal proposals, or a disagreement between the code checks and the AI all force human review.
 - User content is placed inside tags and treated as data, so text like "ignore your rules" does not change the AI's behavior.
 - If the AI is unavailable or returns bad output, the app saves a safe "escalate to a human" result and keeps working.
+- Structured JSON logs record every AI call (model, attempt, outcome, latency), each validation result, and every workflow action. Content text and keys are never logged.
 
 ## Tech stack
 Python, FastAPI, SQLAlchemy with SQLite, Jinja2 server-rendered pages, Groq for the AI model, pytest.

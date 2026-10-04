@@ -64,5 +64,19 @@ button:hover,.btn:hover{background:#111827}
   {% if msg %}<div class="alert {{ kind }}">{{ msg }}</div>{% endif %}
   {% block content %}{% endblock %}
 </main>
+<script>
+document.querySelectorAll("form[method=post]").forEach(function (form) {
+  form.addEventListener("submit", function () {
+    var button = form.querySelector("button");
+    if (button) { button.disabled = true; button.textContent = "Working..."; }
+    var note = document.createElement("p");
+    note.className = "muted";
+    note.textContent = "Please wait. AI reviews and policy changes can take up to a minute.";
+    form.appendChild(note);
+  });
+});
+// If the user comes back with the Back button, reload so the button is usable again
+window.addEventListener("pageshow", function (e) { if (e.persisted) location.reload(); });
+</script>
 </body>
 </html>
